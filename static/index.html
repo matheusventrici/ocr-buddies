@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OCR Buddies</title>
+<meta name="description" content="Cole um print e receba texto ou tabela. OCR local, sem login.">
+<link rel="preload" href="/static/fonts/press-start-2p.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/static/fonts/vt323.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div class="bg-wrap" aria-hidden="true"><canvas id="bg"></canvas></div>
+<div class="crt" aria-hidden="true"></div>
+
+<main>
+  <header class="top">
+    <div class="brand">
+      <h1 class="logo" data-text="OCR//BUDDIES">OCR//BUDDIES</h1>
+      <p class="tagline">&gt; cole um print. a gente lê.<span class="caret"></span></p>
+    </div>
+    <div class="hud-status">
+      <span class="status"><i class="dot"></i>LOCAL · OFFLINE</span>
+      <button id="mute" class="icon-btn" type="button" aria-pressed="false" aria-label="Som ligado">
+        <svg viewBox="0 0 14 14" fill="currentColor" aria-hidden="true">
+          <rect x="1" y="5" width="3" height="4"/><rect x="4" y="4" width="1" height="6"/><rect x="5" y="3" width="1" height="8"/><rect x="6" y="2" width="1" height="10"/>
+          <g class="waves"><rect x="9" y="5" width="1" height="4"/><rect x="11" y="3" width="1" height="2"/><rect x="12" y="5" width="1" height="4"/><rect x="11" y="9" width="1" height="2"/></g>
+          <g class="mute-x"><rect x="9" y="5" width="1" height="1"/><rect x="10" y="6" width="1" height="1"/><rect x="11" y="7" width="1" height="1"/><rect x="12" y="8" width="1" height="1"/><rect x="12" y="5" width="1" height="1"/><rect x="11" y="6" width="1" height="1"/><rect x="10" y="7" width="1" height="1"/><rect x="9" y="8" width="1" height="1"/></g>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <section class="stage" id="stage" aria-label="Personagens">
+    <div class="crew" id="crew"></div>
+    <div class="term" id="term" aria-hidden="true">
+      <div class="term-bar"><i></i><i></i><i></i><span>chat.log</span></div>
+      <p class="term-line"><span class="who"></span><span class="txt"></span><span class="cur"></span></p>
+    </div>
+  </section>
+
+  <label class="drop hud" id="drop" tabindex="0" role="button" aria-label="Escolher imagem">
+    <svg class="pix-ico" viewBox="0 0 14 12" aria-hidden="true">
+      <rect x="0" y="0" width="14" height="1" fill="#ff2bd6"/><rect x="0" y="11" width="14" height="1" fill="#ff2bd6"/>
+      <rect x="0" y="0" width="1" height="12" fill="#ff2bd6"/><rect x="13" y="0" width="1" height="12" fill="#ff2bd6"/>
+      <rect x="9" y="2" width="2" height="2" fill="#ffe94d"/>
+      <rect x="2" y="8" width="1" height="2" fill="#19d3ff"/><rect x="3" y="7" width="1" height="3" fill="#19d3ff"/><rect x="4" y="6" width="1" height="4" fill="#19d3ff"/><rect x="5" y="5" width="1" height="5" fill="#19d3ff"/><rect x="6" y="6" width="1" height="4" fill="#19d3ff"/>
+      <rect x="7" y="7" width="1" height="3" fill="#39ff88"/><rect x="8" y="6" width="1" height="4" fill="#39ff88"/><rect x="9" y="7" width="1" height="3" fill="#39ff88"/><rect x="10" y="8" width="1" height="2" fill="#39ff88"/><rect x="11" y="9" width="1" height="1" fill="#39ff88"/>
+    </svg>
+    <strong>cole com <kbd>CTRL</kbd>+<kbd>V</kbd></strong>
+    <span>arraste uma imagem ou clique aqui · PNG JPG WEBP BMP · até 15 MB</span>
+    <input type="file" id="file" accept="image/*" class="sr">
+  </label>
+
+  <section class="result" id="result" aria-label="Resultado">
+    <div class="hud">
+      <div class="ph">
+        <h2>IMG://ENTRADA</h2>
+        <label class="toggle"><input type="checkbox" id="boxes" checked> CAIXAS</label>
+      </div>
+      <div class="preview" id="preview">
+        <img id="img" alt="Imagem enviada">
+        <svg class="ov" id="ov" preserveAspectRatio="none"></svg>
+        <div class="scan"></div>
+      </div>
+      <div class="meta" id="meta"></div>
+    </div>
+
+    <div class="hud" style="--c: var(--mag)">
+      <div class="ph">
+        <div class="tabs" role="tablist">
+          <button class="tab" role="tab" id="tabText" aria-selected="true">TEXTO</button>
+          <button class="tab" role="tab" id="tabTable" aria-selected="false">TABELA</button>
+        </div>
+        <span class="grow"></span>
+        <span class="chip" id="chip" hidden></span>
+      </div>
+      <div class="panel" id="panelText"><textarea class="out" id="txt" spellcheck="false" aria-label="Texto lido"></textarea></div>
+      <div class="panel" id="panelTable" hidden>
+        <p class="tcap" id="tcap" hidden></p>
+        <div class="tablewrap"><table id="tbl"></table></div>
+        <p class="tcap" id="tnotes" hidden></p>
+        <p class="legend" id="legend" hidden></p>
+        <p class="hint">clique numa célula para corrigir. a edição vai junto na exportação. passe o mouse numa célula marcada para ver o motivo.</p>
+      </div>
+      <div class="panel" style="padding-top:0">
+        <div class="actions" id="actText">
+          <button class="btn fill yel" id="copyText">copiar texto</button>
+          <button class="btn" id="dlTxt">baixar .txt</button>
+        </div>
+        <div class="actions" id="actTable" hidden>
+          <button class="btn fill yel" id="copyTable">copiar p/ excel</button>
+          <button class="btn mag" id="dlXlsx">baixar .xlsx</button>
+          <button class="btn lime" id="dlCsv">baixar .csv</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    roda 100% local · seu print não sai da sua máquina<br>
+    <span class="secret">psst... tem 4 segredos escondidos aqui.</span>
+  </footer>
+</main>
+
+<div class="fx" id="fx" aria-hidden="true"></div>
+<p class="sr" id="sr" aria-live="polite"></p>
+<script type="module" src="/static/js/main.js"></script>
+</body>
+</html>
